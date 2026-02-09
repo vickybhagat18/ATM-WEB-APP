@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 from db import get_db_connection
 from decimal import Decimal
+import sqlite3
+
 
 app = Flask(__name__)
 app.secret_key = "atm_secret_key"
@@ -161,3 +163,9 @@ def logout():
 # RUN
 if __name__ == "__main__":
     app.run(debug=True)
+
+
+def get_db_connection():
+    conn = sqlite3.connect("atm.db")
+    conn.row_factory = sqlite3.Row
+    return conn
