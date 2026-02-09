@@ -20,9 +20,10 @@ def login():
         cursor = conn.cursor()
 
         cursor.execute(
-            "SELECT * FROM users WHERE account_no=%s AND pin=%s",
+            "SELECT * FROM users WHERE account_no=? AND pin=?",
             (account, pin)
-        )
+    )
+
         user = cursor.fetchone()
 
         cursor.close()
