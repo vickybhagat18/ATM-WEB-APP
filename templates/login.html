@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ATM Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="app login-app">
+    <div class="login-container">
+        <h1>ATM Banking Portal</h1>
+        <p class="subtitle">Secure Login</p>
+
+        <form method="post">
+            <input type="text" name="account" placeholder="Account Number" required>
+            <input type="password" name="pin" placeholder="PIN" required>
+            <button class="success" type="submit">Login</button>
+        </form>
+
+        <div class="note">
+            Welcome! Please enter your credentials.
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
