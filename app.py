@@ -17,7 +17,7 @@ def login():
         pin = request.form["pin"]
 
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
 
         cursor.execute(
             "SELECT * FROM users WHERE account_no=%s AND pin=%s",
@@ -46,7 +46,7 @@ def dashboard():
         return redirect(url_for("login"))
 
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor()
 
     cursor.execute(
         "SELECT name, balance FROM users WHERE id=%s",
@@ -73,7 +73,7 @@ def withdraw():
     amount = Decimal(request.form["amount"])
 
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor()
 
     cursor.execute(
         "SELECT balance FROM users WHERE id=%s",
@@ -115,7 +115,7 @@ def deposit():
     amount = Decimal(request.form["amount"])
 
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor()
 
     cursor.execute(
         "UPDATE users SET balance = balance + %s WHERE id=%s",
@@ -141,7 +141,7 @@ def transactions():
         return redirect(url_for("login"))
 
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor()
 
     cursor.execute(
         "SELECT type, amount, transaction_date FROM transactions WHERE user_id=%s ORDER BY transaction_date DESC",
