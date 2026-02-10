@@ -1,20 +1,32 @@
 from flask import Flask, render_template, request, redirect, url_for, session
-from db import get_db_connection
-from decimal import Decimal
 import sqlite3
+from decimal import Decimal
 import os
+from db import get_db_connection, init_db
 
+init_db()
 
 app = Flask(__name__)
-app.secret_key = "atm_secret_key"
+app.secret_key = os.environ.get("SECRET_KEY", "atm_secret_key")
 
+
+# =======================
+# DATABASE CONNECTION
+# =======================
+def get_db_connection():
+    conn = sqlite3.connect("atm.db")
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+# =======================
 # LOGIN
-
+# =======================
 @app.route("/", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        account = request.form["account"]
-        pin = request.form["pin"]
+        account = int(request.form["account"])
+        pin = int(request.form["pin"])
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -22,11 +34,8 @@ def login():
         cursor.execute(
             "SELECT * FROM users WHERE account_no=? AND pin=?",
             (account, pin)
-    )
-
+        )
         user = cursor.fetchone()
-
-        cursor.close()
         conn.close()
 
         if user:
@@ -39,8 +48,9 @@ def login():
     return render_template("login.html")
 
 
+# =======================
 # DASHBOARD
-
+# =======================
 @app.route("/dashboard")
 def dashboard():
     if "user_id" not in session:
@@ -50,12 +60,10 @@ def dashboard():
     cursor = conn.cursor()
 
     cursor.execute(
-        "SELECT name, balance FROM users WHERE id=%s",
+        "SELECT name, balance FROM users WHERE id=?",
         (session["user_id"],)
     )
     user = cursor.fetchone()
-
-    cursor.close()
     conn.close()
 
     return render_template(
@@ -65,7 +73,9 @@ def dashboard():
     )
 
 
+# =======================
 # WITHDRAW
+# =======================
 @app.route("/withdraw", methods=["POST"])
 def withdraw():
     if "user_id" not in session:
@@ -77,37 +87,36 @@ def withdraw():
     cursor = conn.cursor()
 
     cursor.execute(
-        "SELECT balance FROM users WHERE id=%s",
+        "SELECT balance FROM users WHERE id=?",
         (session["user_id"],)
     )
     user = cursor.fetchone()
 
     if user["balance"] < amount:
-        cursor.close()
         conn.close()
         return "Insufficient Balance"
 
     new_balance = user["balance"] - amount
 
     cursor.execute(
-        "UPDATE users SET balance=%s WHERE id=%s",
+        "UPDATE users SET balance=? WHERE id=?",
         (new_balance, session["user_id"])
     )
 
     cursor.execute(
-        "INSERT INTO transactions (user_id, type, amount) VALUES (%s, %s, %s)",
-        (session["user_id"], "withdraw", amount)
+        "INSERT INTO transactions (user_id, type, amount) VALUES (?, ?, ?)",
+        (session["user_id"], "withdraw", float(amount))
     )
 
     conn.commit()
-    cursor.close()
     conn.close()
 
     return redirect(url_for("dashboard"))
 
 
-#  DEPOSIT
-
+# =======================
+# DEPOSIT
+# =======================
 @app.route("/deposit", methods=["POST"])
 def deposit():
     if "user_id" not in session:
@@ -119,23 +128,24 @@ def deposit():
     cursor = conn.cursor()
 
     cursor.execute(
-        "UPDATE users SET balance = balance + %s WHERE id=%s",
-        (amount, session["user_id"])
+        "UPDATE users SET balance = balance + ? WHERE id=?",
+        (float(amount), session["user_id"])
     )
 
     cursor.execute(
-        "INSERT INTO transactions (user_id, type, amount) VALUES (%s, %s, %s)",
-        (session["user_id"], "deposit", amount)
+        "INSERT INTO transactions (user_id, type, amount) VALUES (?, ?, ?)",
+        (session["user_id"], "deposit", float(amount))
     )
 
     conn.commit()
-    cursor.close()
     conn.close()
 
     return redirect(url_for("dashboard"))
 
 
+# =======================
 # TRANSACTIONS
+# =======================
 @app.route("/transactions")
 def transactions():
     if "user_id" not in session:
@@ -145,31 +155,27 @@ def transactions():
     cursor = conn.cursor()
 
     cursor.execute(
-        "SELECT type, amount, transaction_date FROM transactions WHERE user_id=%s ORDER BY transaction_date DESC",
+        "SELECT type, amount, transaction_date FROM transactions WHERE user_id=? ORDER BY transaction_date DESC",
         (session["user_id"],)
     )
     data = cursor.fetchall()
-
-    cursor.close()
     conn.close()
 
     return render_template("transactions.html", transactions=data)
 
+
+# =======================
 # LOGOUT
+# =======================
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect(url_for("login"))
 
 
+# =======================
 # RUN
+# =======================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
-
-
-def get_db_connection():
-    conn = sqlite3.connect("atm.db")
-    conn.row_factory = sqlite3.Row
-    return conn
