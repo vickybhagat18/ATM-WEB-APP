@@ -81,7 +81,7 @@ def withdraw():
     if "user_id" not in session:
         return redirect(url_for("login"))
 
-    amount = Decimal(request.form["amount"])
+    amount = float(request.form["amount"])
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -105,7 +105,7 @@ def withdraw():
 
     cursor.execute(
         "INSERT INTO transactions (user_id, type, amount) VALUES (?, ?, ?)",
-        (session["user_id"], "withdraw", float(amount))
+        (session["user_id"], "withdraw", amount)
     )
 
     conn.commit()
@@ -122,7 +122,7 @@ def deposit():
     if "user_id" not in session:
         return redirect(url_for("login"))
 
-    amount = Decimal(request.form["amount"])
+    amount = float(request.form["amount"])
 
     conn = get_db_connection()
     cursor = conn.cursor()
